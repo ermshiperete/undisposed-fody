@@ -1,0 +1,2 @@
+#!/bin/bash
+mono --debug $(dirname $0)/Undisposed.exe $@
