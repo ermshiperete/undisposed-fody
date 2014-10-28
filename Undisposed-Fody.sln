@@ -27,6 +27,6 @@ Global
 		{ABB105A9-6629-43A7-9EDC-5EF6C4F6BE5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Undisposed\Undisposed.csproj
+		StartupItem = Sample\Sample.csproj
 	EndGlobalSection
 EndGlobal

@@ -6,32 +6,30 @@ using Mono.Cecil;
 using System.Reflection;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
+using System.IO;
 
 namespace Undisposed
 {
 	public partial class ModuleWeaver
 	{
 		public Action<string> LogInfo { get; set; }
-
 		public Action<string> LogWarning { get; set; }
-
 		public Action<string> LogError { get; set; }
-
 		public ModuleDefinition ModuleDefinition { get; set; }
-
 		public IAssemblyResolver AssemblyResolver { get; set; }
+		public string AssemblyFilePath { get; set; }
+		public string ProjectDirectoryPath { get; set; }
+		public string AddinDirectoryPath { get; set; }
+		public string SolutionDirectoryPath { get; set; }
 
 		public ModuleWeaver()
 		{
-			LogInfo = s =>
-			{
-			};
-			LogWarning = s =>
-			{
-			};
-			LogError = s =>
-			{
-			};
+			// Init logging delegates to make testing easier
+			LogInfo = s => { };
+			LogWarning = s => { };
+			LogError = s => { };
+
+			AddinDirectoryPath = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath);
 		}
 
 		public void Execute()
@@ -39,18 +37,19 @@ namespace Undisposed
 			FindCoreReferences();
 
 			foreach (var type in ModuleDefinition
-            .GetTypes()
-            .Where(x =>
-                x.IsClass() &&
-                !x.IsAbstract &&
-                !x.IsGeneratedCode() &&
-                !x.CustomAttributes.ContainsSkipWeaving()))
+				.GetTypes()
+				.Where(x =>
+					x.IsClass() &&
+					!x.IsAbstract &&
+					!x.IsGeneratedCode() &&
+					!x.CustomAttributes.ContainsSkipWeaving()))
 			{
 				var disposeMethods = type.Methods
-                                     .Where(x => !x.IsStatic && (x.Name == "Dispose" || x.Name == "System.IDisposable.Dispose"))
-                                     .ToList();
+					.Where(x => !x.IsStatic && (x.Name == "Dispose" || x.Name == "System.IDisposable.Dispose"))
+					.ToList();
 				if (disposeMethods.Count != 0)
 				{
+					LogInfo(string.Format("Patching class {0}", type.FullName));
 					var disposeMethod = disposeMethods.First(x => !x.HasParameters);
 					ProcessDisposeMethod(disposeMethod);
 
@@ -64,34 +63,14 @@ namespace Undisposed
 					}
 				}
 			}
-			//CleanReferences();
 		}
 
 		private void FindCoreReferences()
 		{
-			var uri = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-			var thisModule = ModuleDefinition.ReadModule(uri.AbsolutePath);
+			var thisModule = ModuleDefinition.ReadModule(Path.Combine(AddinDirectoryPath, "Undisposed.Fody.dll"));
 			var disposeTrackerType = thisModule.Types.First(x => x.FullName == "Undisposed.DisposeTracker");
 			RegisterMethodReference = ModuleDefinition.Import(disposeTrackerType.Find("Register", typeof(object).FullName));
 			UnregisterMethodReference = ModuleDefinition.Import(disposeTrackerType.Find("Unregister", typeof(object).FullName));
-
-//			var assemblyResolver = ModuleDefinition.AssemblyResolver;
-//			var msCoreLibDefinition = assemblyResolver.Resolve("mscorlib");
-//			var msCoreTypes = msCoreLibDefinition.MainModule.Types;
-//
-//			ObjectFinalizeReference = ModuleDefinition.Import(ModuleDefinition.TypeSystem.Object.Resolve().Find("Finalize"));
-//
-//			var gcTypeDefinition = msCoreTypes.First(x => x.Name == "GC");
-//			SuppressFinalizeMethodReference = ModuleDefinition.Import(gcTypeDefinition.Find("SuppressFinalize", "Object"));
-//
-//			var interlockedTypeDefinition = msCoreTypes.First(x => x.Name == "Interlocked");
-//			ExchangeMethodReference = ModuleDefinition.Import(interlockedTypeDefinition.Find("Exchange", "Int32&", "Int32"));
-//
-//			var exceptionTypeDefinition = msCoreTypes.First(x => x.Name == "ObjectDisposedException");
-//			ExceptionConstructorReference = ModuleDefinition.Import(exceptionTypeDefinition.Find(".ctor", "String"));
-//
-//			var iDisposableTypeDefinition = msCoreTypes.First(x => x.Name == "IDisposable");
-//			DisposeMethodReference = ModuleDefinition.Import(iDisposableTypeDefinition.Find("Dispose"));
 		}
 
 		private IEnumerable<Instruction> GetRegisterCallInstructions()
@@ -139,14 +118,7 @@ namespace Undisposed
 			instructions.Add(prevInstructions);
 		}
 
-
 		public MethodReference RegisterMethodReference;
 		public MethodReference UnregisterMethodReference;
-		//		public MethodReference ExchangeMethodReference;
-		//		public MethodReference SuppressFinalizeMethodReference;
-		//		public MethodReference ObjectFinalizeReference;
-		//		public MethodReference DisposeMethodReference;
-		//		public MethodReference ExceptionConstructorReference;
-
 	}
 }

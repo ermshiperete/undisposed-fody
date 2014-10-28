@@ -14,6 +14,11 @@ namespace Undisposed
 
 		public static TrackerOutputKind OutputKind { get; set; }
 
+		static DisposeTracker()
+		{
+			OutputKind = TrackerOutputKind.Dump | TrackerOutputKind.Registration;
+		}
+
 		public static void Reset()
 		{
 			_Registrations = new Dictionary<Type, int>();
