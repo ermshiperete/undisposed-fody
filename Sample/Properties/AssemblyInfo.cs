@@ -1,5 +1,5 @@
-﻿// Copyright (c) 2014 SIL International
-// This software is licensed under the MIT License (http://opensource.org/licenses/MIT)
+﻿// Copyright (c) 2014 Eberhard Beilharz
+// This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("Sample")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("SIL International")]
 [assembly: AssemblyProduct("")]
 [assembly: AssemblyCopyright("Eberhard Beilharz")]
 [assembly: AssemblyTrademark("")]

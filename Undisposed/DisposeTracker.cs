@@ -19,7 +19,7 @@ namespace Undisposed
 			OutputKind = TrackerOutputKind.Dump | TrackerOutputKind.Registration;
 		}
 
-		public static void Reset()
+		internal static void Reset()
 		{
 			_Registrations = new Dictionary<Type, int>();
 			_ObjectNumber = new Dictionary<int, int>();
@@ -65,7 +65,7 @@ namespace Undisposed
 			DumpUndisposedObjects();
 		}
 
-		private static void DumpUndisposedObjects()
+		public static void DumpUndisposedObjects()
 		{
 			if ((OutputKind & TrackerOutputKind.Dump) == 0)
 				return;

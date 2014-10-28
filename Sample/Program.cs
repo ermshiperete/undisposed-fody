@@ -1,5 +1,5 @@
-﻿// Copyright (c) 2014 SIL International
-// This software is licensed under the MIT License (http://opensource.org/licenses/MIT)
+﻿// Copyright (c) 2014 Eberhard Beilharz
+// This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
 using System;
 
 namespace Sample
