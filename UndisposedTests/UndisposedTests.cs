@@ -276,7 +276,7 @@ namespace UndisposedTests
 		{
 			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var output = _Tester.ObjectNotDisposed();
-			Assert.AreEqual("Created A\n*** Creating UndisposedTests.A 1\n*** Creating UndisposedTests.B 1\n*** Disposing UndisposedTests.B 1\n**** Undisposed Object Dump:\n\tUndisposedTests.A 1,\n", output);
+			Assert.AreEqual("Created A\n*** Creating UndisposedTests.A 1\n*** Creating UndisposedTests.B 1\n*** Disposing UndisposedTests.B 1\n**** Undisposed Object Dump:\n\tUndisposedTests.A: 1,\n", output);
 		}
 
 		[Test]
@@ -301,7 +301,7 @@ namespace UndisposedTests
 			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var output = _Tester.DerivedClass();
 			Assert.AreEqual("*** Creating UndisposedTests.D 1\nCreated A\n*** Creating UndisposedTests.E 1\n" +
-				"*** Disposing UndisposedTests.E 1\n**** Undisposed Object Dump:\n\tUndisposedTests.D 1,\n" +
+				"*** Disposing UndisposedTests.E 1\n**** Undisposed Object Dump:\n\tUndisposedTests.D: 1,\n" +
 				"Disposed A\n*** Disposing UndisposedTests.D 1\n**** Undisposed Object Dump:\n", output);
 		}
 

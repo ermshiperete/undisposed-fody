@@ -65,7 +65,7 @@ namespace Undisposed
 			Console.WriteLine("**** Undisposed Object Dump:");
 			foreach (var type in _UndisposedObjects.Keys)
 			{
-				Console.Write("\t{0} ", type.FullName);
+				Console.Write("\t{0}: ", type.FullName);
 				foreach (var n in _UndisposedObjects[type])
 				{
 					Console.Write("{0},", n);

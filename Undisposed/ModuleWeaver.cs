@@ -118,7 +118,7 @@ namespace Undisposed
 					var method = instruction.Operand as MethodReference;
 					if (method != null)
 					{
-						if (method.DeclaringType.IsDerivedFrom(ctor.DeclaringType))
+						if (ctor.DeclaringType.IsDerivedFrom(method.DeclaringType))
 						{
 							var methodDefinition = method as MethodDefinition;
 							if (methodDefinition != null && methodDefinition.IsConstructor)

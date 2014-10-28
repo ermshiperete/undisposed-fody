@@ -175,11 +175,14 @@ namespace Undisposed
 
 		public static bool IsDerivedFrom(this TypeReference t, TypeReference type)
 		{
+			if (type.FullName == "System.Object")
+				return false; // everything derives from object, so we ignore that here
+
 			if (t == type)
 				return true;
-			var typeDef = type as TypeDefinition;
-			if (typeDef != null)
-				return t.IsDerivedFrom(typeDef);
+			var typeDef = t as TypeDefinition;
+			if (typeDef != null && typeDef.BaseType != null)
+				return typeDef.BaseType.IsDerivedFrom(type);
 			return false;
 		}
 	}
