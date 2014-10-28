@@ -51,8 +51,28 @@
     <Compile Include="TrackerOutputKind.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\PepitaPackage.1.21.3\build\PepitaPackage.targets" Condition="Exists('..\packages\PepitaPackage.1.21.3\build\PepitaPackage.targets')" />
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="FodyWeavers.xml" />
+    <None Include="NuGetAssets\Undisposed.nuspec" />
+    <None Include="NuGetAssets\install.ps1" />
+    <None Include="NuGetAssets\uninstall.ps1" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="NuGetAssets\" />
+  </ItemGroup>
+  <Target Name="AfterBuild">
+    <ItemGroup>
+      <FilesToDelete Include="$(SolutionDir)NuGetBuild\**\*.*" />
+      <AssemblyFiles Include="$(OutputPath)Undisposed.Fody.*" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" />
+    <MakeDir Directories="$(SolutionDir)NuGetBuild" />
+    <Copy SourceFiles="@(AssemblyFiles)" DestinationFolder="$(SolutionDir)NuGetBuild" />
+    <Copy SourceFiles="$(ProjectDir)NuGetAssets\Undisposed.nuspec" DestinationFolder="$(SolutionDir)NuGetBuild" />
+    <Copy SourceFiles="$(ProjectDir)NuGetAssets\install.ps1" DestinationFolder="$(SolutionDir)NuGetBuild\Tools" />
+    <Copy SourceFiles="$(ProjectDir)NuGetAssets\uninstall.ps1" DestinationFolder="$(SolutionDir)NuGetBuild\Tools" />
+    <PepitaPackage.CreatePackageTask NuGetBuildDirectory="$(SolutionDir)NuGetBuild" MetadataAssembly="$(OutputPath)Undisposed.Fody.dll" />
+  </Target>
 </Project>
