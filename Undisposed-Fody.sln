@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Undisposed", "Undisposed\Un
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndisposedTests", "UndisposedTests\UndisposedTests.csproj", "{2904ACE4-D7E1-4049-BF94-3E8671E77796}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "Sample\Sample.csproj", "{9F623B0F-B6BE-4940-9285-D1EA6649AEB9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{2904ACE4-D7E1-4049-BF94-3E8671E77796}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2904ACE4-D7E1-4049-BF94-3E8671E77796}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2904ACE4-D7E1-4049-BF94-3E8671E77796}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F623B0F-B6BE-4940-9285-D1EA6649AEB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F623B0F-B6BE-4940-9285-D1EA6649AEB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F623B0F-B6BE-4940-9285-D1EA6649AEB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F623B0F-B6BE-4940-9285-D1EA6649AEB9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ABB105A9-6629-43A7-9EDC-5EF6C4F6BE5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ABB105A9-6629-43A7-9EDC-5EF6C4F6BE5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABB105A9-6629-43A7-9EDC-5EF6C4F6BE5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
