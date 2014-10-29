@@ -16,7 +16,6 @@ namespace Undisposed
 		public Action<string> LogWarning { get; set; }
 		public Action<string> LogError { get; set; }
 		public ModuleDefinition ModuleDefinition { get; set; }
-		public IAssemblyResolver AssemblyResolver { get; set; }
 		public string AssemblyFilePath { get; set; }
 		public string ProjectDirectoryPath { get; set; }
 		public string AddinDirectoryPath { get; set; }
@@ -50,7 +49,18 @@ namespace Undisposed
 				if (disposeMethods.Count != 0)
 				{
 					LogInfo(string.Format("Patching class {0}", type.FullName));
-					var disposeMethod = disposeMethods.First(x => !x.HasParameters);
+					var disposeMethod = disposeMethods.FirstOrDefault(x => !x.HasParameters);
+					if (disposeMethod == null)
+					{
+						// If the base type is not in the same assembly as the type we're processing
+						// then we want to patch the Dispose method. If it is in the same
+						// assembly then the patch code gets added to the Dispose method of the
+						// base class, so we skip this type.
+						if (type.BaseType.Scope == type.Scope)
+							continue;
+
+						disposeMethod = disposeMethods[0];
+					}
 					ProcessDisposeMethod(disposeMethod);
 
 					var constructors = type.Methods.Where(x => !x.IsStatic && x.IsConstructor).ToList();

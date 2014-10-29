@@ -9,6 +9,7 @@ using System.IO;
 using Mono.Cecil;
 using System.Runtime;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace UndisposedTests
 {
@@ -110,8 +111,27 @@ namespace UndisposedTests
 			}
 			return _consoleOutput.ToString();
 		}
+
+		public string DerivedFromExternalClass()
+		{
+			_consoleOutput.GetStringBuilder().Clear();
+			using (var h = new H())
+			{
+			}
+			return _consoleOutput.ToString();
+		}
+
+		public string DerivedFromInternalClass()
+		{
+			_consoleOutput.GetStringBuilder().Clear();
+			using (var j = new J())
+			{
+			}
+			return _consoleOutput.ToString();
+		}
 	}
 
+	#region Test classes
 	public class A: IDisposable
 	{
 		public A()
@@ -200,6 +220,47 @@ namespace UndisposedTests
 		{
 		}
 	}
+
+	public class H: Process
+	{
+		public H()
+		{
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+		}
+	}
+
+	public class I: IDisposable
+	{
+		public I()
+		{
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+		}
+	}
+
+	public class J: I
+	{
+		public J()
+		{
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+		}
+	}
+	#endregion Test classes
 
 	[TestFixture]
 	public class UndisposedTests
@@ -319,6 +380,22 @@ namespace UndisposedTests
 			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var output = _Tester.DerivedClassImplementsIDisposable();
 			Assert.AreEqual("*** Creating UndisposedTests.G 1\n*** Disposing UndisposedTests.G 1\n**** Undisposed Object Dump:\n", output);
+		}
+
+		[Test]
+		public void DerivedFromExternalClass()
+		{
+			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var output = _Tester.DerivedFromExternalClass();
+			Assert.AreEqual("*** Creating UndisposedTests.H 1\n*** Disposing UndisposedTests.H 1\n**** Undisposed Object Dump:\n", output);
+		}
+
+		[Test]
+		public void DerivedFromInternalClass()
+		{
+			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var output = _Tester.DerivedFromInternalClass();
+			Assert.AreEqual("*** Creating UndisposedTests.J 1\n*** Disposing UndisposedTests.J 1\n**** Undisposed Object Dump:\n", output);
 		}
 
 	}
