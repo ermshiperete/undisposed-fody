@@ -21,64 +21,76 @@ namespace Undisposed
 
 		internal static void Reset()
 		{
-			_Registrations = new Dictionary<Type, int>();
-			_ObjectNumber = new Dictionary<int, int>();
-			_UndisposedObjects = new Dictionary<Type, List<int>>();
+			lock (_Registrations)
+			{
+				_Registrations = new Dictionary<Type, int>();
+				_ObjectNumber = new Dictionary<int, int>();
+				_UndisposedObjects = new Dictionary<Type, List<int>>();
+			}
 		}
 
 		public static void Register(object obj)
 		{
-			var t = obj.GetType();
-			var hash = RuntimeHelpers.GetHashCode(obj);
-			if (!_Registrations.ContainsKey(t))
+			lock (_Registrations)
 			{
-				_Registrations.Add(t, 1);
-				_UndisposedObjects.Add(t, new List<int>());
-			}
-			var thisNumber = _Registrations[t]++;
-			_ObjectNumber.Add(hash, thisNumber);
-			_UndisposedObjects[t].Add(thisNumber);
+				var t = obj.GetType();
+				var hash = RuntimeHelpers.GetHashCode(obj);
+				if (!_Registrations.ContainsKey(t))
+					_Registrations.Add(t, 1);
+				if (!_UndisposedObjects.ContainsKey(t))
+					_UndisposedObjects.Add(t, new List<int>());
 
-			if ((OutputKind & TrackerOutputKind.Registration) != 0)
-				Console.WriteLine("*** Creating {0} {1}", t.FullName, thisNumber);
+				var thisNumber = _Registrations[t]++;
+				_ObjectNumber.Add(hash, thisNumber);
+				_UndisposedObjects[t].Add(thisNumber);
+
+				if ((OutputKind & TrackerOutputKind.Registration) != 0)
+					Console.WriteLine("*** Creating {0} {1}", t.FullName, thisNumber);
+			}
 		}
 
 		public static void Unregister(object obj)
 		{
-			var t = obj.GetType();
-			var hash = RuntimeHelpers.GetHashCode(obj);
-			int thisNumber;
-			if (!_ObjectNumber.TryGetValue(hash, out thisNumber))
+			lock (_Registrations)
 			{
-				Console.WriteLine("Disposing {0}: Error: Object was not registered", t.FullName);
-				return;
+				var t = obj.GetType();
+				var hash = RuntimeHelpers.GetHashCode(obj);
+				int thisNumber;
+				if (!_ObjectNumber.TryGetValue(hash, out thisNumber))
+				{
+					Console.WriteLine("Disposing {0}: Error: Object was not registered", t.FullName);
+					return;
+				}
+
+				if ((OutputKind & TrackerOutputKind.Registration) != 0)
+					Console.WriteLine("*** Disposing {0} {1}", t.FullName, thisNumber);
+
+				_ObjectNumber.Remove(hash);
+				_UndisposedObjects[t].Remove(thisNumber);
+				if (_UndisposedObjects[t].Count == 0)
+					_UndisposedObjects.Remove(t);
+
+				DumpUndisposedObjects();
 			}
-
-			if ((OutputKind & TrackerOutputKind.Registration) != 0)
-				Console.WriteLine("*** Disposing {0} {1}", t.FullName, thisNumber);
-
-			_ObjectNumber.Remove(hash);
-			_UndisposedObjects[t].Remove(thisNumber);
-			if (_UndisposedObjects[t].Count == 0)
-				_UndisposedObjects.Remove(t);
-
-			DumpUndisposedObjects();
 		}
 
 		public static void DumpUndisposedObjects()
 		{
-			if ((OutputKind & TrackerOutputKind.Dump) == 0)
-				return;
-
-			Console.WriteLine("**** Undisposed Object Dump:");
-			foreach (var type in _UndisposedObjects.Keys)
+			lock (_Registrations)
 			{
-				Console.Write("\t{0}: ", type.FullName);
-				foreach (var n in _UndisposedObjects[type])
+				if ((OutputKind & TrackerOutputKind.Dump) == 0)
+					return;
+
+				Console.WriteLine("**** Undisposed Object Dump:");
+				foreach (var type in _UndisposedObjects.Keys)
 				{
-					Console.Write("{0},", n);
+					Console.Write("\t{0}: ", type.FullName);
+					foreach (var n in _UndisposedObjects[type])
+					{
+						Console.Write("{0},", n);
+					}
+					Console.WriteLine();
 				}
-				Console.WriteLine();
 			}
 		}
 	}
