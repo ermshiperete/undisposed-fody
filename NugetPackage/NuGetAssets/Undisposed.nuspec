@@ -10,7 +10,7 @@
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <projectUrl>http://github.com/ermshiperete/undisposed-fody</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-\    <description>Fody add-in that helps tracking down undisposed objects</description>
+    <description>Fody add-in that helps tracking down undisposed objects</description>
     <language>en-US</language>
     <tags>IDisposable, Dispose, ILWeaving, Fody, Cecil, Debug</tags>
     <dependencies>
