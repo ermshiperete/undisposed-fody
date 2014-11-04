@@ -13,6 +13,16 @@ namespace UndisposedExe
 			Console.WriteLine("Undisposed.exe [-o outputfile] assemblyname");
 		}
 
+		private static void ProcessFile(string inputFile, string outputFile)
+		{
+			Console.WriteLine("Processing {0} -> {1}", inputFile, outputFile);
+			var def = Mono.Cecil.ModuleDefinition.ReadModule(inputFile);
+			var moduleWeaver = new ModuleWeaver();
+			moduleWeaver.ModuleDefinition = def;
+			moduleWeaver.Execute();
+			def.Write(outputFile);
+		}
+
 		public static void Main(string[] args)
 		{
 			if (args.Length < 1)
@@ -22,12 +32,14 @@ namespace UndisposedExe
 			}
 
 			string inputFile = args[args.Length - 1];
-			string outputFile;
+			string outputFile = string.Empty;
+			bool isOutputFileSet = false;
 			if (args.Length >= 3)
 			{
 				if (args[0] == "-o" || args[0] == "--output")
 				{
 					outputFile = args[1];
+					isOutputFileSet = true;
 				}
 				else
 				{
@@ -35,14 +47,17 @@ namespace UndisposedExe
 					return;
 				}
 			}
-			else
-				outputFile = inputFile;
 
-			var def = Mono.Cecil.ModuleDefinition.ReadModule(inputFile);
-			var moduleWeaver = new ModuleWeaver();
-			moduleWeaver.ModuleDefinition = def;
-			moduleWeaver.Execute();
-			def.Write(outputFile);
+			if (!isOutputFileSet)
+			{
+				for (int i = 0; i < args.Length; i++)
+				{
+					inputFile = args[i];
+					ProcessFile(inputFile, inputFile);
+				}
+			}
+			else
+				ProcessFile(inputFile, outputFile);
 		}
 	}
 }
