@@ -1,5 +1,7 @@
 ﻿// Copyright (c) 2014 Eberhard Beilharz
 // This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
+
+using System.Text;
 using NUnit.Framework;
 using System;
 using Undisposed;
@@ -94,7 +96,7 @@ Disposed AllObjectsDisposed
 *** Creating AssemblyToProcess.ObjectNotDisposed 1
 *** Disposing AssemblyToProcess.ObjectNotDisposed 1
 **** Undisposed Object Dump:
-" + "\t" + @"AssemblyToProcess.AllObjectsDisposed: 1,
+" + "\t" + @"AssemblyToProcess.AllObjectsDisposed: 1
 ", output);
 		}
 
@@ -138,7 +140,7 @@ Created AllObjectsDisposed
 *** Creating AssemblyToProcess.DerivedClass 1
 *** Disposing AssemblyToProcess.DerivedClass 1
 **** Undisposed Object Dump:
-" + "\t" + @"AssemblyToProcess.TwoIndependentConstructors: 1,
+" + "\t" + @"AssemblyToProcess.TwoIndependentConstructors: 1
 Disposed AllObjectsDisposed
 *** Disposing AssemblyToProcess.TwoIndependentConstructors 1
 **** Undisposed Object Dump:
@@ -195,6 +197,26 @@ Disposed AllObjectsDisposed
 *** Disposing AssemblyToProcess.DerivedFromInternalClass 1
 **** Undisposed Object Dump:
 ", output);
+		}
+
+		[Test]
+		public void RedirectOutput()
+		{
+			var oldOutput = DisposeTracker.LogWriter;
+
+			var writer = new StringBuilder();
+			DisposeTracker.LogWriter = s => writer.AppendLine(s);
+
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("AllObjectsDisposed");
+			instance.Dispose();
+			var output = writer.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.AllObjectsDisposed 1
+*** Disposing AssemblyToProcess.AllObjectsDisposed 1
+**** Undisposed Object Dump:
+", output);
+
+			DisposeTracker.LogWriter = oldOutput;
 		}
 
 		private static void SetOutputKind(TrackerOutputKind outputKind)

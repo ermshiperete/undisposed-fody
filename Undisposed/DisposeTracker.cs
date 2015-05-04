@@ -2,6 +2,7 @@
 // This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Undisposed
@@ -13,10 +14,12 @@ namespace Undisposed
 		private static Dictionary<Type, List<int>> _UndisposedObjects = new Dictionary<Type, List<int>>();
 
 		public static TrackerOutputKind OutputKind { get; set; }
+		public static Action<string> LogWriter { get; set; }
 
 		static DisposeTracker()
 		{
 			OutputKind = TrackerOutputKind.Dump | TrackerOutputKind.Registration;
+			LogWriter = Console.WriteLine;
 		}
 
 		internal static void Reset()
@@ -45,7 +48,7 @@ namespace Undisposed
 				_UndisposedObjects[t].Add(thisNumber);
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
-					Console.WriteLine("*** Creating {0} {1}", t.FullName, thisNumber);
+					LogWriter(string.Format("*** Creating {0} {1}", t.FullName, thisNumber));
 			}
 		}
 
@@ -58,12 +61,12 @@ namespace Undisposed
 				int thisNumber;
 				if (!_ObjectNumber.TryGetValue(hash, out thisNumber))
 				{
-					Console.WriteLine("Disposing {0}: Error: Object was not registered", t.FullName);
+					LogWriter(string.Format("Disposing {0}: Error: Object was not registered", t.FullName));
 					return;
 				}
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
-					Console.WriteLine("*** Disposing {0} {1}", t.FullName, thisNumber);
+					LogWriter(string.Format("*** Disposing {0} {1}", t.FullName, thisNumber));
 
 				_ObjectNumber.Remove(hash);
 				_UndisposedObjects[t].Remove(thisNumber);
@@ -81,15 +84,11 @@ namespace Undisposed
 				if ((OutputKind & TrackerOutputKind.Dump) == 0)
 					return;
 
-				Console.WriteLine("**** Undisposed Object Dump:");
+				LogWriter("**** Undisposed Object Dump:");
 				foreach (var type in _UndisposedObjects.Keys)
 				{
-					Console.Write("\t{0}: ", type.FullName);
-					foreach (var n in _UndisposedObjects[type])
-					{
-						Console.Write("{0},", n);
-					}
-					Console.WriteLine();
+					LogWriter(string.Format("\t{0}: {1}", type.FullName,
+						string.Join(",", _UndisposedObjects[type].Select(n => n.ToString()))));
 				}
 			}
 		}
