@@ -2,402 +2,212 @@
 // This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
 using NUnit.Framework;
 using System;
-using System.Reflection;
 using Undisposed;
-using System.Text;
 using System.IO;
-using Mono.Cecil;
-using System.Runtime;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
 
 namespace UndisposedTests
 {
-	public class MyModuleWeaver: ModuleWeaver
-	{
-		private StringBuilder bldr = new StringBuilder();
-
-		public MyModuleWeaver()
-		{
-			LogInfo = s => bldr.Append(s);
-			LogWarning = s => bldr.Append(s);
-			LogError = s => bldr.Append(s);
-		}
-
-		public string GetLog()
-		{
-			return bldr.ToString();
-		}
-	}
-
-	public class Tester: MarshalByRefObject
-	{
-		private readonly StringWriter _consoleOutput;
-
-		public Tester()
-		{
-			_consoleOutput = new StringWriter();
-			Console.SetOut(_consoleOutput);
-		}
-
-		public void SetOutputKind(TrackerOutputKind outputKind)
-		{
-			DisposeTracker.Reset();
-			DisposeTracker.OutputKind = outputKind;
-		}
-
-		public string AllObjectsDisposed()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var a = new A())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string ObjectNotDisposed()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var b = new B())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string TwoConstructorsCallingEachOther()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var c = new C())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string TwoIndependentConstructors()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var d = new D())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string DerivedClass()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var d = new D())
-			{
-				using (var e = new E())
-				{
-				}
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string NoDefaultCtor()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var f = new F(string.Empty))
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string DerivedClassImplementsIDisposable()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var g = new G())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string DerivedFromExternalClass()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var h = new H())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-
-		public string DerivedFromInternalClass()
-		{
-			_consoleOutput.GetStringBuilder().Clear();
-			using (var j = new J())
-			{
-			}
-			return _consoleOutput.ToString();
-		}
-	}
-
-	#region Test classes
-	public class A: IDisposable
-	{
-		public A()
-		{
-			Console.WriteLine("Created A");
-		}
-
-		public void Dispose()
-		{
-			Console.WriteLine("Disposed A");
-		}
-	}
-
-	public class B: IDisposable
-	{
-		private A a;
-
-		public B()
-		{
-			a = new A();
-		}
-
-		public void Dispose()
-		{
-		}
-	}
-
-	public class C: IDisposable
-	{
-		public C()
-			: this(string.Empty)
-		{
-		}
-
-		public C(string x)
-		{
-		}
-
-		public void Dispose()
-		{
-		}
-	}
-
-	public class D: IDisposable
-	{
-		public D()
-		{
-		}
-
-		public D(string x)
-		{
-		}
-
-		public void Dispose()
-		{
-		}
-	}
-
-	public class E: A
-	{
-		public E()
-			: base()
-		{
-		}
-	}
-
-	public class F: IDisposable
-	{
-		public F(string x)
-		{
-		}
-
-		public void Dispose()
-		{
-		}
-	}
-
-	public class G: F, IDisposable
-	{
-		public G()
-			: base(string.Empty)
-		{
-		}
-
-		void IDisposable.Dispose()
-		{
-		}
-	}
-
-	public class H: Process
-	{
-		public H()
-		{
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			base.Dispose(disposing);
-		}
-	}
-
-	public class I: IDisposable
-	{
-		public I()
-		{
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-		}
-	}
-
-	public class J: I
-	{
-		public J()
-		{
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			base.Dispose(disposing);
-		}
-	}
-	#endregion Test classes
-
 	[TestFixture]
 	public class UndisposedTests
 	{
-		private MyModuleWeaver _moduleWeaver;
-		private string _tempAssemblyFileName;
-		private Tester _Tester;
-		private AppDomain _TestDomain;
+		private ModuleWeaverTestHelper _moduleWeaverTestHelper;
+		private StringWriter _consoleOutput;
 
 		[TestFixtureSetUp]
 		public void FixtureSetUp()
 		{
-			var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			_tempAssemblyFileName = Path.Combine(assemblyDir, Path.GetRandomFileName() + ".dll");
-			var def = Mono.Cecil.ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location);
-			_moduleWeaver = new MyModuleWeaver();
-			_moduleWeaver.ModuleDefinition = def;
-			_moduleWeaver.Execute();
-			def.Write(_tempAssemblyFileName);
-
-			// Construct and initialize settings for a second AppDomain.
-			var ads = new AppDomainSetup();
-			ads.ApplicationBase = assemblyDir;
-			ads.DisallowBindingRedirects = false;
-			ads.DisallowCodeDownload = true;
-			ads.ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile;
-
-			// Create the second AppDomain.
-			_TestDomain = AppDomain.CreateDomain("Test domain", null, ads);
-			_Tester = (Tester)_TestDomain.CreateInstanceAndUnwrap(Path.GetFileNameWithoutExtension(_tempAssemblyFileName), typeof(Tester).FullName);
+			_moduleWeaverTestHelper = new ModuleWeaverTestHelper(
+				"../../../AssemblyToProcess/bin/Debug/AssemblyToProcess.dll");
+			_consoleOutput = new StringWriter();
+			Console.SetOut(_consoleOutput);
 		}
 
-		[TestFixtureTearDown]
-		public void FixtureTeardDown()
+		[SetUp]
+		public void SetUp()
 		{
-			AppDomain.Unload(_TestDomain);
-			File.Delete(_tempAssemblyFileName);
+			_consoleOutput.GetStringBuilder().Clear();
 		}
 
 		[Test]
 		public void TurnedOff()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.None);
-			var output = _Tester.AllObjectsDisposed();
-			Assert.AreEqual("Created A\nDisposed A\n", output);
+			SetOutputKind(TrackerOutputKind.None);
+			var instance = GetInstance("AllObjectsDisposed");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"Created AllObjectsDisposed
+Disposed AllObjectsDisposed
+", output);
 		}
 
 		[Test]
 		public void AllDisposed()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.AllObjectsDisposed();
-			Assert.AreEqual("Created A\n*** Creating UndisposedTests.A 1\n*** Disposing UndisposedTests.A 1\n**** Undisposed Object Dump:\nDisposed A\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("AllObjectsDisposed");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"Created AllObjectsDisposed
+*** Creating AssemblyToProcess.AllObjectsDisposed 1
+*** Disposing AssemblyToProcess.AllObjectsDisposed 1
+**** Undisposed Object Dump:
+Disposed AllObjectsDisposed
+", output);
 		}
 
 		[Test]
 		public void AllDisposedDumpOnly()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump);
-			var output = _Tester.AllObjectsDisposed();
-			Assert.AreEqual("Created A\n**** Undisposed Object Dump:\nDisposed A\n", output);
+			SetOutputKind(TrackerOutputKind.Dump);
+			var instance = GetInstance("AllObjectsDisposed");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"Created AllObjectsDisposed
+**** Undisposed Object Dump:
+Disposed AllObjectsDisposed
+", output);
 		}
 
 		[Test]
 		public void AllDisposedRegistrationOnly()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Registration);
-			var output = _Tester.AllObjectsDisposed();
-			Assert.AreEqual("Created A\n*** Creating UndisposedTests.A 1\n*** Disposing UndisposedTests.A 1\nDisposed A\n", output);
+			SetOutputKind(TrackerOutputKind.Registration);
+			var instance = GetInstance("AllObjectsDisposed");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"Created AllObjectsDisposed
+*** Creating AssemblyToProcess.AllObjectsDisposed 1
+*** Disposing AssemblyToProcess.AllObjectsDisposed 1
+Disposed AllObjectsDisposed
+", output);
 		}
 
 		[Test]
 		public void NotDisposed()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.ObjectNotDisposed();
-			Assert.AreEqual("Created A\n*** Creating UndisposedTests.A 1\n*** Creating UndisposedTests.B 1\n*** Disposing UndisposedTests.B 1\n**** Undisposed Object Dump:\n\tUndisposedTests.A: 1,\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("ObjectNotDisposed");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"Created AllObjectsDisposed
+*** Creating AssemblyToProcess.AllObjectsDisposed 1
+*** Creating AssemblyToProcess.ObjectNotDisposed 1
+*** Disposing AssemblyToProcess.ObjectNotDisposed 1
+**** Undisposed Object Dump:
+" + "\t" + @"AssemblyToProcess.AllObjectsDisposed: 1,
+", output);
 		}
 
 		[Test]
 		public void TwoConstructorsCallingEachOther()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.TwoConstructorsCallingEachOther();
-			Assert.AreEqual("*** Creating UndisposedTests.C 1\n*** Disposing UndisposedTests.C 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("TwoConstructorsCallingEachOther");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoConstructorsCallingEachOther 1
+*** Disposing AssemblyToProcess.TwoConstructorsCallingEachOther 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void TwoIndependentConstructors()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.TwoIndependentConstructors();
-			Assert.AreEqual("*** Creating UndisposedTests.D 1\n*** Disposing UndisposedTests.D 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("TwoIndependentConstructors");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
+*** Disposing AssemblyToProcess.TwoIndependentConstructors 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void DerivedClass()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.DerivedClass();
-			Assert.AreEqual("*** Creating UndisposedTests.D 1\nCreated A\n*** Creating UndisposedTests.E 1\n" +
-				"*** Disposing UndisposedTests.E 1\n**** Undisposed Object Dump:\n\tUndisposedTests.D: 1,\n" +
-				"Disposed A\n*** Disposing UndisposedTests.D 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var tic = GetInstance("TwoIndependentConstructors");
+			var instance = GetInstance("DerivedClass");
+			instance.Dispose();
+			tic.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
+Created AllObjectsDisposed
+*** Creating AssemblyToProcess.DerivedClass 1
+*** Disposing AssemblyToProcess.DerivedClass 1
+**** Undisposed Object Dump:
+" + "\t" + @"AssemblyToProcess.TwoIndependentConstructors: 1,
+Disposed AllObjectsDisposed
+*** Disposing AssemblyToProcess.TwoIndependentConstructors 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void NoDefaultCtor()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.NoDefaultCtor();
-			Assert.AreEqual("*** Creating UndisposedTests.F 1\n*** Disposing UndisposedTests.F 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("NoDefaultCtor", string.Empty);
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.NoDefaultCtor 1
+*** Disposing AssemblyToProcess.NoDefaultCtor 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void DerivedClassImplementsIDisposable()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.DerivedClassImplementsIDisposable();
-			Assert.AreEqual("*** Creating UndisposedTests.G 1\n*** Disposing UndisposedTests.G 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("DerivedClassImplementsIDisposable");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedClassImplementsIDisposable 1
+*** Disposing AssemblyToProcess.DerivedClassImplementsIDisposable 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void DerivedFromExternalClass()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.DerivedFromExternalClass();
-			Assert.AreEqual("*** Creating UndisposedTests.H 1\n*** Disposing UndisposedTests.H 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("DerivedFromExternalClass");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedFromExternalClass 1
+*** Disposing AssemblyToProcess.DerivedFromExternalClass 1
+**** Undisposed Object Dump:
+", output);
 		}
 
 		[Test]
 		public void DerivedFromInternalClass()
 		{
-			_Tester.SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
-			var output = _Tester.DerivedFromInternalClass();
-			Assert.AreEqual("*** Creating UndisposedTests.J 1\n*** Disposing UndisposedTests.J 1\n**** Undisposed Object Dump:\n", output);
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("DerivedFromInternalClass");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedFromInternalClass 1
+*** Disposing AssemblyToProcess.DerivedFromInternalClass 1
+**** Undisposed Object Dump:
+", output);
 		}
 
+		private static void SetOutputKind(TrackerOutputKind outputKind)
+		{
+			DisposeTracker.Reset();
+			DisposeTracker.OutputKind = outputKind;
+		}
+
+		private dynamic GetInstance(string className, params object[] args)
+		{
+			var type = _moduleWeaverTestHelper.Assembly.GetType(
+				              "AssemblyToProcess." + className, true);
+			return Activator.CreateInstance(type, args);
+		}
 	}
 }
-
