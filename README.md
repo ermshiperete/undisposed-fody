@@ -39,6 +39,38 @@ dispose tracker:
 - `Undisposed.DisposedTracker.DumpUndisposedObjects()`:
   Dumps all undisposed objects.
 
+### Simple Case
+
+All objects which implement `IDisposable` will have their creation\disposal tracked.
+
+#### Your Code
+
+    public class Sample : IDisposable
+    {
+        public void Dispose()
+        {
+        }
+    }
+
+#### What gets compiled
+
+    public class Sample : IDisposable
+    {
+        public Sample()
+        {
+            Undisposed.DisposeTracker.Register(this);
+        }
+
+        public void Dispose()
+        {
+            Undisposed.DisposeTracker.Unregister(this);
+        }
+    }
+
+### What if I have a class I don't want to be tracked
+
+Simple. Just add the `[Undisposed.DoNotTrack]` attribute to the class you don't want to be tracked. Then Undisposed will not touch it.
+
 Installation
 ------------
 
