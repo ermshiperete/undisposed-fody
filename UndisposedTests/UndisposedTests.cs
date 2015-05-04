@@ -219,6 +219,16 @@ Disposed AllObjectsDisposed
 			DisposeTracker.LogWriter = oldOutput;
 		}
 
+		[Test]
+		public void UntrackedClass()
+		{
+			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
+			var instance = GetInstance("UntrackedClass");
+			instance.Dispose();
+			var output = _consoleOutput.ToString();
+			Assert.AreEqual(string.Empty, output);
+		}
+
 		private static void SetOutputKind(TrackerOutputKind outputKind)
 		{
 			DisposeTracker.Reset();

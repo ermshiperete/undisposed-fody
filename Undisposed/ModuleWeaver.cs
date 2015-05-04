@@ -41,7 +41,7 @@ namespace Undisposed
 					x.IsClass() &&
 					!x.IsAbstract &&
 					!x.IsGeneratedCode() &&
-					!x.CustomAttributes.ContainsSkipWeaving()))
+					!x.CustomAttributes.ContainsDoNotTrack()))
 			{
 				var disposeMethods = type.Methods
 					.Where(x => !x.IsStatic && (x.Name == "Dispose" || x.Name == "System.IDisposable.Dispose"))
@@ -73,6 +73,8 @@ namespace Undisposed
 					}
 				}
 			}
+
+			CleanReferences();
 		}
 
 		private void FindCoreReferences()

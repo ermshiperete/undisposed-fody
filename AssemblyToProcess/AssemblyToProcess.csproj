@@ -53,6 +53,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TwoConstructorsCallingEachOther.cs" />
     <Compile Include="TwoIndependentConstructors.cs" />
+    <Compile Include="UntrackedClass.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Undisposed\Undisposed40.csproj">
+      <Project>{90ddeb66-3475-43fa-850d-f46f61654d1e}</Project>
+      <Name>Undisposed40</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

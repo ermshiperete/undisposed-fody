@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-//using Anotar.Custom;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -10,40 +9,20 @@ namespace Undisposed
 {
 	public static class CecilExtensions
 	{
-		public static bool ContainsSkipWeaving(this IEnumerable<CustomAttribute> attributes)
+		public static bool ContainsDoNotTrack(this IEnumerable<CustomAttribute> attributes)
 		{
-			return attributes.Any(x => x.AttributeType.FullName == "Janitor.SkipWeaving");
+			return attributes.Any(x => x.AttributeType.FullName == "Undisposed.DoNotTrackAttribute");
 		}
 
-		public static void RemoveSkipWeaving(this Collection<CustomAttribute> attributes)
+		public static void RemoveDoNotTrack(this Collection<CustomAttribute> attributes)
 		{
-			var attribute = attributes.FirstOrDefault(x => x.AttributeType.FullName == "Janitor.SkipWeaving");
+			var attribute = attributes.FirstOrDefault(x => x.AttributeType.FullName == "Undisposed.DoNotTrackAttribute");
 			if (attribute != null)
 			{
 				attributes.Remove(attribute);
 			}
 		}
 
-//		public static bool MethodExists(this TypeDefinition typeDefinition, string method)
-//		{
-//			if (typeDefinition.Methods.Any(x => x.Name == method))
-//			{
-//				LogTo.Error("Type `{0}` contains a `{1}` method. Either remove this method or add a `[Janitor.SkipWeaving]` attribute to the type.", typeDefinition.FullName, method);
-//				return true;
-//			}
-//			return false;
-//		}
-//
-//		public static bool FieldExists(this TypeDefinition typeDefinition, string field)
-//		{
-//			if (typeDefinition.Fields.Any(x => x.Name == field))
-//			{
-//				LogTo.Error("Type `{0}` contains a `{1}` field. Either remove this field or add a `[Janitor.SkipWeaving]` attribute to the type.", typeDefinition.FullName, field);
-//				return true;
-//			}
-//			return false;
-//		}
-//
 		public static bool IsClass(this TypeDefinition x)
 		{
 			return (x.BaseType != null) && !x.IsEnum && !x.IsInterface;
