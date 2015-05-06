@@ -29,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Core" />
     <Reference Include="Mono.Cecil">
       <HintPath>..\packages\FodyCecil.1.26.0\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -41,7 +42,6 @@
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>..\packages\FodyCecil.1.26.0\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -51,4 +51,7 @@
     <Compile Include="TrackerOutputKind.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>
