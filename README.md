@@ -36,7 +36,7 @@ dispose tracker:
   The default value is to output both.
 
 
-- `Undisposed.DisposedTracker.DumpUndisposedObjects()`:
+- `Undisposed.DisposeTracker.DumpUndisposedObjects()`:
   Dumps all undisposed objects.
 
 ### Simple Case
