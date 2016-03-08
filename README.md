@@ -35,13 +35,15 @@ dispose tracker:
 
   The default value is to output both.
 
+- `Undisposed.DisposeTracker.TrackCreationStackTrace`: if set to `true` the call stack will
+  be dumped below the dumped undisposed object.
 
 - `Undisposed.DisposeTracker.DumpUndisposedObjects()`:
   Dumps all undisposed objects.
 
 ### Simple Case
 
-All objects which implement `IDisposable` will have their creation\disposal tracked.
+All objects which implement `IDisposable` will have their creation/disposal tracked.
 
 #### Your Code
 
@@ -69,7 +71,8 @@ All objects which implement `IDisposable` will have their creation\disposal trac
 
 ### What if I have a class I don't want to be tracked
 
-Simple. Just add the `[Undisposed.DoNotTrack]` attribute to the class you don't want to be tracked. Then Undisposed will not touch it.
+Simple. Just add the `[Undisposed.DoNotTrack]` attribute to the class you don't want to be
+tracked. Then Undisposed will not touch it.
 
 Installation
 ------------
