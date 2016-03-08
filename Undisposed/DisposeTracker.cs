@@ -2,6 +2,7 @@
 // This software is licensed under the MIT license (http://opensource.org/licenses/MIT)
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -11,10 +12,12 @@ namespace Undisposed
 	{
 		private static Dictionary<Type, int> _Registrations = new Dictionary<Type, int>();
 		private static Dictionary<int, int> _ObjectNumber = new Dictionary<int, int>();
-		private static Dictionary<Type, List<int>> _UndisposedObjects = new Dictionary<Type, List<int>>();
+		private static Dictionary<Type, List<Tuple<int, string>>>_UndisposedObjects =
+			new Dictionary<Type, List<Tuple<int, string>>>();
 
 		public static TrackerOutputKind OutputKind { get; set; }
 		public static Action<string> LogWriter { get; set; }
+		public static bool TrackCreationStackTrace { get; set; }
 
 		static DisposeTracker()
 		{
@@ -28,7 +31,7 @@ namespace Undisposed
 			{
 				_Registrations = new Dictionary<Type, int>();
 				_ObjectNumber = new Dictionary<int, int>();
-				_UndisposedObjects = new Dictionary<Type, List<int>>();
+				_UndisposedObjects = new Dictionary<Type, List<Tuple<int, string>>>();
 			}
 		}
 
@@ -41,43 +44,85 @@ namespace Undisposed
 				if (!_Registrations.ContainsKey(t))
 					_Registrations.Add(t, 1);
 				if (!_UndisposedObjects.ContainsKey(t))
-					_UndisposedObjects.Add(t, new List<int>());
+					_UndisposedObjects.Add(t, new List<Tuple<int, string>>());
 
 				var thisNumber = _Registrations[t]++;
 				_ObjectNumber.Add(hash, thisNumber);
-				_UndisposedObjects[t].Add(thisNumber);
+				if (TrackCreationStackTrace)
+					_UndisposedObjects[t].Add(new Tuple<int, string>(thisNumber, GetStackTraceString()));
+				else
+					_UndisposedObjects[t].Add(new Tuple<int, string>(thisNumber, string.Empty));
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
 					LogWriter(string.Format("*** Creating {0} {1}", t.FullName, thisNumber));
 			}
 		}
 
+		private static string GetStackTraceString()
+		{
+			var stack = new StackTrace();
+			var stackTraceFrames = stack.ToString().Split(new[] { Environment.NewLine },
+				StringSplitOptions.None);
+			return string.Join(Environment.NewLine, stackTraceFrames.Skip(2));
+		}
+
 		public static void Unregister(object obj)
 		{
 			lock (_Registrations)
 			{
-				var t = obj.GetType();
+				var objType = obj.GetType();
 				var hash = RuntimeHelpers.GetHashCode(obj);
 				int thisNumber;
 				if (!_ObjectNumber.TryGetValue(hash, out thisNumber))
 				{
-					LogWriter(string.Format("Disposing {0}: Error: Object was not registered", t.FullName));
+					LogWriter(string.Format("Disposing {0}: Error: Object was not registered",
+						objType.FullName));
 					return;
 				}
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
-					LogWriter(string.Format("*** Disposing {0} {1}", t.FullName, thisNumber));
+					LogWriter(string.Format("*** Disposing {0} {1}", objType.FullName, thisNumber));
 
 				_ObjectNumber.Remove(hash);
-				_UndisposedObjects[t].Remove(thisNumber);
-				if (_UndisposedObjects[t].Count == 0)
-					_UndisposedObjects.Remove(t);
+
+				var target = _UndisposedObjects[objType].First(y => y.Item1 == thisNumber);
+				_UndisposedObjects[objType].Remove(target);
+
+				if (_UndisposedObjects[objType].Count == 0)
+					_UndisposedObjects.Remove(objType);
 
 				DumpUndisposedObjects();
 			}
 		}
 
 		public static void DumpUndisposedObjects()
+		{
+			if (TrackCreationStackTrace)
+				DumpUndiposedObjectWithStackTrace();
+			else
+				DumpUndiposedObjectWithoutStackTrace();
+		}
+
+		private static void DumpUndiposedObjectWithStackTrace()
+		{
+			lock (_Registrations)
+			{
+				if ((OutputKind & TrackerOutputKind.Dump) == 0)
+					return;
+
+				LogWriter("**** Undisposed Object Dump:");
+				foreach (var type in _UndisposedObjects.Keys)
+				{
+					foreach (Tuple<int, string> entry in _UndisposedObjects[type])
+					{
+						LogWriter(string.Format("\t{0}: {1}\n\tStack Trace:\n{2}",
+							type.FullName, entry.Item1, entry.Item2));
+					}
+				}
+			}
+		}
+
+		private static void DumpUndiposedObjectWithoutStackTrace()
 		{
 			lock (_Registrations)
 			{
@@ -88,7 +133,7 @@ namespace Undisposed
 				foreach (var type in _UndisposedObjects.Keys)
 				{
 					LogWriter(string.Format("\t{0}: {1}", type.FullName,
-						string.Join(",", _UndisposedObjects[type].Select(n => n.ToString()))));
+						string.Join(",", _UndisposedObjects[type].Select(n => n.Item1.ToString()))));
 				}
 			}
 		}
