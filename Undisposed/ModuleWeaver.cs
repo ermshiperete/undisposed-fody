@@ -81,8 +81,8 @@ namespace Undisposed
 		{
 			var thisModule = ModuleDefinition.ReadModule(Path.Combine(AddinDirectoryPath, "Undisposed.Fody.dll"));
 			var disposeTrackerType = thisModule.Types.First(x => x.FullName == "Undisposed.DisposeTracker");
-			RegisterMethodReference = ModuleDefinition.Import(disposeTrackerType.Find("Register", typeof(object).FullName));
-			UnregisterMethodReference = ModuleDefinition.Import(disposeTrackerType.Find("Unregister", typeof(object).FullName));
+			RegisterMethodReference = ModuleDefinition.ImportReference(disposeTrackerType.Find("Register", typeof(object).FullName));
+			UnregisterMethodReference = ModuleDefinition.ImportReference(disposeTrackerType.Find("Unregister", typeof(object).FullName));
 		}
 
 		private IEnumerable<Instruction> GetRegisterCallInstructions()

@@ -31,8 +31,8 @@ namespace Undisposed
 		public static bool IsIDisposable(this TypeReference typeRef)
 		{
 			var type = typeRef.Resolve();
-			return (type.Interfaces.Any(i => i.FullName.Equals("System.IDisposable"))
-			|| (type.BaseType != null && type.BaseType.IsIDisposable()));
+			return type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.IDisposable"))
+				|| type.BaseType != null && type.BaseType.IsIDisposable();
 		}
 
 
@@ -125,31 +125,6 @@ namespace Undisposed
 				return true;
 
 			return false;
-		}
-
-		public static void HideLineFromDebugger(this Instruction i, SequencePoint seqPoint)
-		{
-			if (seqPoint == null)
-				return;
-
-			HideLineFromDebugger(i, seqPoint.Document);
-		}
-
-		public static void HideLineFromDebugger(this Instruction i, Document doc)
-		{
-			if (doc == null)
-				return;
-
-			// This tells the debugger to ignore and step through
-			// all the following instructions to the next instruction
-			// with a valid SequencePoint. That way IL can be hidden from
-			// the Debugger. See
-			// http://blogs.msdn.com/b/abhinaba/archive/2005/10/10/479016.aspx
-			i.SequencePoint = new SequencePoint(doc)
-			{
-				StartLine = 0xfeefee, 
-				EndLine = 0xfeefee
-			};
 		}
 
 		public static bool IsDerivedFrom(this TypeReference t, TypeReference type)

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AssemblyToProcess</RootNamespace>
     <AssemblyName>AssemblyToProcess</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -56,9 +56,9 @@
     <Compile Include="UntrackedClass.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Undisposed\Undisposed40.csproj">
-      <Project>{90ddeb66-3475-43fa-850d-f46f61654d1e}</Project>
-      <Name>Undisposed40</Name>
+    <ProjectReference Include="..\Undisposed\Undisposed.csproj">
+      <Project>{abb105a9-6629-43a7-9edc-5ef6c4f6be5a}</Project>
+      <Name>Undisposed</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
