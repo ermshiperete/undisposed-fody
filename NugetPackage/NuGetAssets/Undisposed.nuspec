@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="2.8">
     <id>Undisposed.Fody</id>
     <version>$version$</version>
@@ -14,7 +14,7 @@
     <language>en-US</language>
     <tags>IDisposable, Dispose, ILWeaving, Fody, Cecil, Debug</tags>
     <dependencies>
-      <dependency id="Fody"/>
+      <dependency id="Fody" version="2.1"/>
     </dependencies>
   </metadata>
 </package>
