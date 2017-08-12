@@ -1,7 +1,7 @@
 Undisposed.Fody
 ===============
 
-Undisposed.Fody is a Fody addin and a standalone application
+Undisposed.Fody is a [Fody](https://github.com/Fody/Fody) addin and a standalone application
 that helps to track down undisposed objects. Occasionally
 crashes or application hangs are caused by undisposed objects,
 especially if the objects references COM objects.
