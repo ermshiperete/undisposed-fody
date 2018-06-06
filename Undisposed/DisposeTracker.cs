@@ -48,13 +48,12 @@ namespace Undisposed
 
 				var thisNumber = _Registrations[t]++;
 				_ObjectNumber.Add(hash, thisNumber);
-				if (TrackCreationStackTrace)
-					_UndisposedObjects[t].Add(new Tuple<int, string>(thisNumber, GetStackTraceString()));
-				else
-					_UndisposedObjects[t].Add(new Tuple<int, string>(thisNumber, string.Empty));
+				_UndisposedObjects[t].Add(TrackCreationStackTrace
+					? new Tuple<int, string>(thisNumber, GetStackTraceString())
+					: new Tuple<int, string>(thisNumber, string.Empty));
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
-					LogWriter(string.Format("*** Creating {0} {1}", t.FullName, thisNumber));
+					LogWriter($"*** Creating {t.FullName} {thisNumber}");
 			}
 		}
 
@@ -72,16 +71,14 @@ namespace Undisposed
 			{
 				var objType = obj.GetType();
 				var hash = RuntimeHelpers.GetHashCode(obj);
-				int thisNumber;
-				if (!_ObjectNumber.TryGetValue(hash, out thisNumber))
+				if (!_ObjectNumber.TryGetValue(hash, out var thisNumber))
 				{
-					LogWriter(string.Format("Disposing {0}: Error: Object was not registered",
-						objType.FullName));
+					LogWriter($"Disposing {objType.FullName}: Error: Object was not registered");
 					return;
 				}
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
-					LogWriter(string.Format("*** Disposing {0} {1}", objType.FullName, thisNumber));
+					LogWriter($"*** Disposing {objType.FullName} {thisNumber}");
 
 				_ObjectNumber.Remove(hash);
 
@@ -115,8 +112,8 @@ namespace Undisposed
 				{
 					foreach (Tuple<int, string> entry in _UndisposedObjects[type])
 					{
-						LogWriter(string.Format("\t{0}: {1}\n\tStack Trace:\n{2}",
-							type.FullName, entry.Item1, entry.Item2));
+						LogWriter(
+							$"\t{type.FullName}: {entry.Item1}\n\tStack Trace:\n{entry.Item2}");
 					}
 				}
 			}
@@ -132,8 +129,8 @@ namespace Undisposed
 				LogWriter("**** Undisposed Object Dump:");
 				foreach (var type in _UndisposedObjects.Keys)
 				{
-					LogWriter(string.Format("\t{0}: {1}", type.FullName,
-						string.Join(",", _UndisposedObjects[type].Select(n => n.Item1.ToString()))));
+					LogWriter(
+						$"\t{type.FullName}: {string.Join(",", _UndisposedObjects[type].Select(n => n.Item1.ToString()))}");
 				}
 			}
 		}

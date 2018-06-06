@@ -75,12 +75,12 @@ namespace Undisposed
 					return method;
 				}
 			}
-			throw new ApplicationException(string.Format("Could not find '{0}' on '{1}'", name, typeReference.Name));
+			throw new ApplicationException($"Could not find '{name}' on '{typeReference.Name}'");
 		}
 
 		public static string GetName(this FieldDefinition field)
 		{
-			return string.Format("{0}.{1}", field.DeclaringType.FullName, field.Name);
+			return $"{field.DeclaringType.FullName}.{field.Name}";
 		}
 
 		public static bool IsMatch(this MethodReference methodReference, string name, params string[] paramTypes)
@@ -121,23 +121,24 @@ namespace Undisposed
 				return false;
 
 			var ctor = (MethodReference)instructions[0].Operand;
-			if (ctor.DeclaringType.FullName == "System.NotImplementedException")
-				return true;
-
-			return false;
+			return ctor.DeclaringType.FullName == "System.NotImplementedException";
 		}
 
 		public static bool IsDerivedFrom(this TypeReference t, TypeReference type)
 		{
-			if (type.FullName == "System.Object")
-				return false; // everything derives from object, so we ignore that here
+			while (true)
+			{
+				if (type.FullName == "System.Object")
+					return false; // everything derives from object, so we ignore that here
 
-			if (t == type)
-				return true;
-			var typeDef = t as TypeDefinition;
-			if (typeDef != null && typeDef.BaseType != null)
-				return typeDef.BaseType.IsDerivedFrom(type);
-			return false;
+				if (t == type)
+					return true;
+
+				if (!(t is TypeDefinition typeDef) || typeDef.BaseType == null)
+					return false;
+
+				t = typeDef.BaseType;
+			}
 		}
 	}
 }

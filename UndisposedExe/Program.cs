@@ -17,8 +17,7 @@ namespace UndisposedExe
 		{
 			Console.WriteLine("Processing {0} -> {1}", inputFile, outputFile);
 			var def = Mono.Cecil.ModuleDefinition.ReadModule(inputFile);
-			var moduleWeaver = new ModuleWeaver();
-			moduleWeaver.ModuleDefinition = def;
+			var moduleWeaver = new ModuleWeaver { ModuleDefinition = def };
 			moduleWeaver.Execute();
 			def.Write(outputFile);
 		}
@@ -31,9 +30,9 @@ namespace UndisposedExe
 				return;
 			}
 
-			string inputFile = args[args.Length - 1];
-			string outputFile = string.Empty;
-			bool isOutputFileSet = false;
+			var inputFile = args[args.Length - 1];
+			var outputFile = string.Empty;
+			var isOutputFileSet = false;
 			if (args.Length >= 3)
 			{
 				if (args[0] == "-o" || args[0] == "--output")
@@ -50,9 +49,9 @@ namespace UndisposedExe
 
 			if (!isOutputFileSet)
 			{
-				for (int i = 0; i < args.Length; i++)
+				foreach (var arg in args)
 				{
-					inputFile = args[i];
+					inputFile = arg;
 					ProcessFile(inputFile, inputFile);
 				}
 			}

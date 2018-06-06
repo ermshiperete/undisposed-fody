@@ -14,4 +14,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Security
 -->
 
-## [Unreleased]
+## [3.0.0] - 2018-06-06
+
+### Changed
+
+- Adjust to Fody version 3
+- Move to .NET 4.6 (instead of 4.5)
+
+### Removed
+
+- Support for .NET 4.0

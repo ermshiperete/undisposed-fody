@@ -14,7 +14,7 @@
     <language>en-US</language>
     <tags>IDisposable, Dispose, ILWeaving, Fody, Cecil, Debug</tags>
     <dependencies>
-      <dependency id="Fody" version="2.1"/>
+      <dependency id="Fody" version="3.0"/>
     </dependencies>
   </metadata>
 </package>

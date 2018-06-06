@@ -27,7 +27,7 @@ public class ModuleWeaverTestHelper
 #endif
 		AfterAssemblyPath = BeforeAssemblyPath.Replace(".dll", "2.dll");
 		var useMdb = IsUnix && File.Exists(BeforeAssemblyPath + ".mdb");
-		var oldPdb =  useMdb ?BeforeAssemblyPath + ".mdb" : BeforeAssemblyPath.Replace(".dll", ".pdb");
+		var oldPdb =  useMdb ? BeforeAssemblyPath + ".mdb" : BeforeAssemblyPath.Replace(".dll", ".pdb");
 		var newPdb = useMdb ?
 			AfterAssemblyPath + ".mdb" : AfterAssemblyPath.Replace(".dll", ".pdb");
 
@@ -41,7 +41,7 @@ public class ModuleWeaverTestHelper
 				ReadSymbols = true,
 				SymbolStream = symbolStream,
 				SymbolReaderProvider = useMdb ?
-					(ISymbolReaderProvider)new MdbReaderProvider() : new PdbReaderProvider()
+					(ISymbolReaderProvider) new MdbReaderProvider() : new PdbReaderProvider()
 			};
 			moduleDefinition = ModuleDefinition.ReadModule(BeforeAssemblyPath, readerParameters);
 

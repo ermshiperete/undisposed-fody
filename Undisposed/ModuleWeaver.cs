@@ -7,20 +7,12 @@ using System.Reflection;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
 using System.IO;
+using Fody;
 
 namespace Undisposed
 {
-	public partial class ModuleWeaver
+	public partial class ModuleWeaver: BaseModuleWeaver
 	{
-		public Action<string> LogInfo { get; set; }
-		public Action<string> LogWarning { get; set; }
-		public Action<string> LogError { get; set; }
-		public ModuleDefinition ModuleDefinition { get; set; }
-		public string AssemblyFilePath { get; set; }
-		public string ProjectDirectoryPath { get; set; }
-		public string AddinDirectoryPath { get; set; }
-		public string SolutionDirectoryPath { get; set; }
-
 		public ModuleWeaver()
 		{
 			// Init logging delegates to make testing easier
@@ -31,7 +23,7 @@ namespace Undisposed
 			AddinDirectoryPath = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath);
 		}
 
-		public void Execute()
+		public override void Execute()
 		{
 			FindCoreReferences();
 
@@ -46,9 +38,11 @@ namespace Undisposed
 				var disposeMethods = type.Methods
 					.Where(x => !x.IsStatic && (x.Name == "Dispose" || x.Name == "System.IDisposable.Dispose"))
 					.ToList();
-				if (disposeMethods.Count != 0)
+				if (disposeMethods.Count == 0)
+					continue;
+
 				{
-					LogInfo(string.Format("Patching class {0}", type.FullName));
+					LogInfo($"Patching class {type.FullName}");
 					var disposeMethod = disposeMethods.FirstOrDefault(x => !x.HasParameters);
 					if (disposeMethod == null)
 					{
@@ -64,17 +58,22 @@ namespace Undisposed
 					ProcessDisposeMethod(disposeMethod);
 
 					var constructors = type.Methods.Where(x => !x.IsStatic && x.IsConstructor).ToList();
-					if (constructors.Count != 0)
+					if (constructors.Count == 0)
+						continue;
+
+					foreach (var ctor in constructors)
 					{
-						foreach (var ctor in constructors)
-						{
-							ProcessConstructor(ctor);
-						}
+						ProcessConstructor(ctor);
 					}
 				}
 			}
 
 			CleanReferences();
+		}
+
+		public override IEnumerable<string> GetAssembliesForScanning()
+		{
+			yield break;
 		}
 
 		private void FindCoreReferences()
@@ -104,19 +103,17 @@ namespace Undisposed
 			var instructions = ctor.Body.Instructions;
 			foreach (var instruction in instructions)
 			{
-				if (instruction.OpCode == OpCodes.Call)
-				{
-					var method = instruction.Operand as MethodReference;
-					if (method != null)
-					{
-						if (ctor.DeclaringType.IsDerivedFrom(method.DeclaringType))
-						{
-							var methodDefinition = method as MethodDefinition;
-							if (methodDefinition != null && methodDefinition.IsConstructor)
-								return;
-						}
-					}
-				}
+				if (instruction.OpCode != OpCodes.Call)
+					continue;
+
+				if (!(instruction.Operand is MethodReference method))
+					continue;
+
+				if (!ctor.DeclaringType.IsDerivedFrom(method.DeclaringType))
+					continue;
+
+				if (method is MethodDefinition methodDefinition && methodDefinition.IsConstructor)
+					return;
 			}
 			instructions.InsertAt(instructions.Count - 1, GetRegisterCallInstructions());
 		}
