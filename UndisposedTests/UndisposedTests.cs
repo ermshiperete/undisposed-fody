@@ -6,6 +6,7 @@ using NUnit.Framework;
 using System;
 using Undisposed;
 using System.IO;
+using System.Reflection;
 
 namespace UndisposedTests
 {
@@ -14,14 +15,18 @@ namespace UndisposedTests
 	{
 		private ModuleWeaverTestHelper _moduleWeaverTestHelper;
 		private StringWriter _consoleOutput;
+		private Action<string> _originalLogWriter;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void FixtureSetUp()
 		{
-			_moduleWeaverTestHelper = new ModuleWeaverTestHelper(
-				"../../../AssemblyToProcess/bin/Debug/AssemblyToProcess.dll");
+			var assembly = Assembly.GetExecutingAssembly();
+			var directoryThisAssembly = Path.GetDirectoryName(assembly.Location);
+			_moduleWeaverTestHelper = new ModuleWeaverTestHelper(Path.Combine(directoryThisAssembly,
+				"../../../AssemblyToProcess/bin/Debug/AssemblyToProcess.dll"));
 			_consoleOutput = new StringWriter();
 			Console.SetOut(_consoleOutput);
+			_originalLogWriter = DisposeTracker.LogWriter;
 		}
 
 		[SetUp]
@@ -30,16 +35,22 @@ namespace UndisposedTests
 			_consoleOutput.GetStringBuilder().Clear();
 		}
 
+		[TearDown]
+		public void TearDown()
+		{
+			DisposeTracker.LogWriter = _originalLogWriter;
+		}
+
 		[Test]
 		public void TurnedOff()
 		{
 			SetOutputKind(TrackerOutputKind.None);
 			var instance = GetInstance("AllObjectsDisposed");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"Created AllObjectsDisposed
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"Created AllObjectsDisposed
 Disposed AllObjectsDisposed
-", output);
+"));
 		}
 
 		[Test]
@@ -48,13 +59,13 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("AllObjectsDisposed");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"Created AllObjectsDisposed
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"Created AllObjectsDisposed
 *** Creating AssemblyToProcess.AllObjectsDisposed 1
 *** Disposing AssemblyToProcess.AllObjectsDisposed 1
 **** Undisposed Object Dump:
 Disposed AllObjectsDisposed
-", output);
+"));
 		}
 
 		[Test]
@@ -63,11 +74,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump);
 			var instance = GetInstance("AllObjectsDisposed");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"Created AllObjectsDisposed
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"Created AllObjectsDisposed
 **** Undisposed Object Dump:
 Disposed AllObjectsDisposed
-", output);
+"));
 		}
 
 		[Test]
@@ -76,12 +87,12 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Registration);
 			var instance = GetInstance("AllObjectsDisposed");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"Created AllObjectsDisposed
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"Created AllObjectsDisposed
 *** Creating AssemblyToProcess.AllObjectsDisposed 1
 *** Disposing AssemblyToProcess.AllObjectsDisposed 1
 Disposed AllObjectsDisposed
-", output);
+"));
 		}
 
 		[Test]
@@ -90,14 +101,14 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("ObjectNotDisposed");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"Created AllObjectsDisposed
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"Created AllObjectsDisposed
 *** Creating AssemblyToProcess.AllObjectsDisposed 1
 *** Creating AssemblyToProcess.ObjectNotDisposed 1
 *** Disposing AssemblyToProcess.ObjectNotDisposed 1
 **** Undisposed Object Dump:
 " + "\t" + @"AssemblyToProcess.AllObjectsDisposed: 1
-", output);
+"));
 		}
 
 		[Test]
@@ -106,11 +117,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("TwoConstructorsCallingEachOther");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoConstructorsCallingEachOther 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.TwoConstructorsCallingEachOther 1
 *** Disposing AssemblyToProcess.TwoConstructorsCallingEachOther 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -119,11 +130,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("TwoIndependentConstructors");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
 *** Disposing AssemblyToProcess.TwoIndependentConstructors 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -134,8 +145,8 @@ Disposed AllObjectsDisposed
 			var instance = GetInstance("DerivedClass");
 			instance.Dispose();
 			tic.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.TwoIndependentConstructors 1
 Created AllObjectsDisposed
 *** Creating AssemblyToProcess.DerivedClass 1
 *** Disposing AssemblyToProcess.DerivedClass 1
@@ -144,7 +155,7 @@ Created AllObjectsDisposed
 Disposed AllObjectsDisposed
 *** Disposing AssemblyToProcess.TwoIndependentConstructors 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -153,11 +164,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("NoDefaultCtor", string.Empty);
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.NoDefaultCtor 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.NoDefaultCtor 1
 *** Disposing AssemblyToProcess.NoDefaultCtor 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -166,11 +177,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("DerivedClassImplementsIDisposable");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedClassImplementsIDisposable 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.DerivedClassImplementsIDisposable 1
 *** Disposing AssemblyToProcess.DerivedClassImplementsIDisposable 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -179,11 +190,11 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("DerivedFromExternalClass");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedFromExternalClass 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.DerivedFromExternalClass 1
 *** Disposing AssemblyToProcess.DerivedFromExternalClass 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
@@ -192,31 +203,27 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("DerivedFromInternalClass");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.DerivedFromInternalClass 1
+			Assert.That(_consoleOutput.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.DerivedFromInternalClass 1
 *** Disposing AssemblyToProcess.DerivedFromInternalClass 1
 **** Undisposed Object Dump:
-", output);
+"));
 		}
 
 		[Test]
 		public void RedirectOutput()
 		{
-			var oldOutput = DisposeTracker.LogWriter;
-
 			var writer = new StringBuilder();
 			DisposeTracker.LogWriter = s => writer.AppendLine(s);
 
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("AllObjectsDisposed");
 			instance.Dispose();
-			var output = writer.ToString();
-			Assert.AreEqual(@"*** Creating AssemblyToProcess.AllObjectsDisposed 1
+			Assert.That(writer.ToString(),
+				Is.EqualTo(@"*** Creating AssemblyToProcess.AllObjectsDisposed 1
 *** Disposing AssemblyToProcess.AllObjectsDisposed 1
 **** Undisposed Object Dump:
-", output);
-
-			DisposeTracker.LogWriter = oldOutput;
+"));
 		}
 
 		[Test]
@@ -225,8 +232,7 @@ Disposed AllObjectsDisposed
 			SetOutputKind(TrackerOutputKind.Dump | TrackerOutputKind.Registration);
 			var instance = GetInstance("UntrackedClass");
 			instance.Dispose();
-			var output = _consoleOutput.ToString();
-			Assert.AreEqual(string.Empty, output);
+			Assert.That(_consoleOutput.ToString(), Is.Empty);
 		}
 
 		private static void SetOutputKind(TrackerOutputKind outputKind)
@@ -237,8 +243,7 @@ Disposed AllObjectsDisposed
 
 		private dynamic GetInstance(string className, params object[] args)
 		{
-			var type = _moduleWeaverTestHelper.Assembly.GetType(
-				              "AssemblyToProcess." + className, true);
+			var type = _moduleWeaverTestHelper.Assembly.GetType($"AssemblyToProcess.{className}", true);
 			return Activator.CreateInstance(type, args);
 		}
 	}
