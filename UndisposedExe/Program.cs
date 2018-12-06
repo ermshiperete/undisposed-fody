@@ -24,7 +24,7 @@ namespace UndisposedExe
 
 		public static void Main(string[] args)
 		{
-			if (args.Length < 1)
+			if (args.Length < 1 || args[0] == "--help" || args[0] == "-h")
 			{
 				Usage();
 				return;
