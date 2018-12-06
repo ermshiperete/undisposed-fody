@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Security
 -->
 
+## [Unreleased]
+
+### Changed
+
+- deal with objects that are different but produce the same hash
+
 ## [3.0.0] - 2018-06-06
 
 ### Changed

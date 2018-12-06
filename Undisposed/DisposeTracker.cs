@@ -10,10 +10,38 @@ namespace Undisposed
 {
 	public static class DisposeTracker
 	{
+		private class MyWeakReference : WeakReference
+		{
+			public MyWeakReference(object obj) : base(obj)
+			{
+			}
+
+			public override bool Equals(object obj)
+			{
+				if (!IsAlive)
+					return false;
+
+				switch (obj)
+				{
+					case MyWeakReference otherWeakReference:
+						return Target.Equals(otherWeakReference.Target);
+					case WeakReference _:
+						return base.Equals(obj);
+					default:
+						return Target.Equals(obj);
+				}
+			}
+
+			public override int GetHashCode()
+			{
+				return IsAlive ? Target.GetHashCode() : base.GetHashCode();
+			}
+		}
+
 		private static Dictionary<Type, int> _Registrations = new Dictionary<Type, int>();
-		private static Dictionary<int, int> _ObjectNumber = new Dictionary<int, int>();
-		private static Dictionary<Type, List<Tuple<int, string>>>_UndisposedObjects =
-			new Dictionary<Type, List<Tuple<int, string>>>();
+		private static Dictionary<MyWeakReference, int> _ObjectNumber = new Dictionary<MyWeakReference, int>();
+		private static Dictionary<Type, List<(int, string)>>_UndisposedObjects =
+			new Dictionary<Type, List<(int, string)>>();
 
 		public static TrackerOutputKind OutputKind { get; set; }
 		public static Action<string> LogWriter { get; set; }
@@ -23,6 +51,7 @@ namespace Undisposed
 		{
 			OutputKind = TrackerOutputKind.Dump | TrackerOutputKind.Registration;
 			LogWriter = Console.WriteLine;
+			LogWriter("*** Undisposed.Fody loaded");
 		}
 
 		internal static void Reset()
@@ -30,8 +59,8 @@ namespace Undisposed
 			lock (_Registrations)
 			{
 				_Registrations = new Dictionary<Type, int>();
-				_ObjectNumber = new Dictionary<int, int>();
-				_UndisposedObjects = new Dictionary<Type, List<Tuple<int, string>>>();
+				_ObjectNumber = new Dictionary<MyWeakReference, int>();
+				_UndisposedObjects = new Dictionary<Type, List<(int, string)>>();
 			}
 		}
 
@@ -40,17 +69,16 @@ namespace Undisposed
 			lock (_Registrations)
 			{
 				var t = obj.GetType();
-				var hash = RuntimeHelpers.GetHashCode(obj);
 				if (!_Registrations.ContainsKey(t))
 					_Registrations.Add(t, 1);
 				if (!_UndisposedObjects.ContainsKey(t))
-					_UndisposedObjects.Add(t, new List<Tuple<int, string>>());
+					_UndisposedObjects.Add(t, new List<(int, string)>());
 
 				var thisNumber = _Registrations[t]++;
-				_ObjectNumber.Add(hash, thisNumber);
+				_ObjectNumber.Add(new MyWeakReference(obj), thisNumber);
 				_UndisposedObjects[t].Add(TrackCreationStackTrace
-					? new Tuple<int, string>(thisNumber, GetStackTraceString())
-					: new Tuple<int, string>(thisNumber, string.Empty));
+					? (number: thisNumber, stack: GetStackTraceString())
+					: (number: thisNumber, stack: string.Empty));
 
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
 					LogWriter($"*** Creating {t.FullName} {thisNumber}");
@@ -70,8 +98,8 @@ namespace Undisposed
 			lock (_Registrations)
 			{
 				var objType = obj.GetType();
-				var hash = RuntimeHelpers.GetHashCode(obj);
-				if (!_ObjectNumber.TryGetValue(hash, out var thisNumber))
+				var reference = new MyWeakReference(obj);
+				if (!_ObjectNumber.TryGetValue(reference, out var thisNumber))
 				{
 					LogWriter($"Disposing {objType.FullName}: Error: Object was not registered");
 					return;
@@ -80,7 +108,7 @@ namespace Undisposed
 				if ((OutputKind & TrackerOutputKind.Registration) != 0)
 					LogWriter($"*** Disposing {objType.FullName} {thisNumber}");
 
-				_ObjectNumber.Remove(hash);
+				_ObjectNumber.Remove(reference);
 
 				var target = _UndisposedObjects[objType].First(y => y.Item1 == thisNumber);
 				_UndisposedObjects[objType].Remove(target);
@@ -110,10 +138,10 @@ namespace Undisposed
 				LogWriter("**** Undisposed Object Dump:");
 				foreach (var type in _UndisposedObjects.Keys)
 				{
-					foreach (Tuple<int, string> entry in _UndisposedObjects[type])
+					foreach (var (number, stack) in _UndisposedObjects[type])
 					{
 						LogWriter(
-							$"\t{type.FullName}: {entry.Item1}\n\tStack Trace:\n{entry.Item2}");
+							$"\t{type.FullName}: {number}\n\tStack Trace:\n{stack}");
 					}
 				}
 			}
@@ -130,7 +158,7 @@ namespace Undisposed
 				foreach (var type in _UndisposedObjects.Keys)
 				{
 					LogWriter(
-						$"\t{type.FullName}: {string.Join(",", _UndisposedObjects[type].Select(n => n.Item1.ToString()))}");
+						$"\t{type.FullName}: {string.Join(",", _UndisposedObjects[type].Select(x => { var (n, _) = x; return n.ToString(); }))}");
 				}
 			}
 		}
