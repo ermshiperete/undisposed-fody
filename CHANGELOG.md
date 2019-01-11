@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - deal with objects that are different but produce the same hash
 
+### Fixed
+
+- crash trying to unregister an object
+
 ## [3.0.0] - 2018-06-06
 
 ### Changed

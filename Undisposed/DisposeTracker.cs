@@ -110,8 +110,9 @@ namespace Undisposed
 
 				_ObjectNumber.Remove(reference);
 
-				var target = _UndisposedObjects[objType].First(y => y.Item1 == thisNumber);
-				_UndisposedObjects[objType].Remove(target);
+				var target = _UndisposedObjects[objType].FirstOrDefault(y => y.Item1 == thisNumber);
+				if (target != default)
+					_UndisposedObjects[objType].Remove(target);
 
 				if (_UndisposedObjects[objType].Count == 0)
 					_UndisposedObjects.Remove(objType);
