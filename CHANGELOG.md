@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - deal with objects that are different but produce the same hash
+- update to Fody 6 (#6)
 
 ### Fixed
 

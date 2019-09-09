@@ -6,8 +6,6 @@ using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Mdb;
 using Undisposed;
 
 public class ModuleWeaverTestHelper
@@ -17,8 +15,6 @@ public class ModuleWeaverTestHelper
 	public Assembly Assembly;
 	public List<string> Errors;
 
-	private static bool IsUnix => Environment.OSVersion.Platform == PlatformID.Unix;
-
 	public ModuleWeaverTestHelper(string inputAssembly)
 	{
 		BeforeAssemblyPath = Path.GetFullPath(inputAssembly);
@@ -26,10 +22,8 @@ public class ModuleWeaverTestHelper
 		BeforeAssemblyPath = BeforeAssemblyPath.Replace("Debug", "Release");
 #endif
 		AfterAssemblyPath = BeforeAssemblyPath.Replace(".dll", "2.dll");
-		var useMdb = IsUnix && File.Exists(BeforeAssemblyPath + ".mdb");
-		var oldPdb =  useMdb ? BeforeAssemblyPath + ".mdb" : BeforeAssemblyPath.Replace(".dll", ".pdb");
-		var newPdb = useMdb ?
-			AfterAssemblyPath + ".mdb" : AfterAssemblyPath.Replace(".dll", ".pdb");
+		var oldPdb = BeforeAssemblyPath.Replace(".dll", ".pdb");
+		var newPdb = AfterAssemblyPath.Replace(".dll", ".pdb");
 
 		Errors = new List<string>();
 
@@ -40,8 +34,7 @@ public class ModuleWeaverTestHelper
 			{
 				ReadSymbols = true,
 				SymbolStream = symbolStream,
-				SymbolReaderProvider = useMdb ?
-					(ISymbolReaderProvider) new MdbReaderProvider() : new PdbReaderProvider()
+				SymbolReaderProvider = new PdbReaderProvider()
 			};
 			moduleDefinition = ModuleDefinition.ReadModule(BeforeAssemblyPath, readerParameters);
 
@@ -59,8 +52,7 @@ public class ModuleWeaverTestHelper
 			{
 				WriteSymbols = true,
 				SymbolStream = symbolStream,
-				SymbolWriterProvider =
-					useMdb ? (ISymbolWriterProvider) new MdbWriterProvider() : new PdbWriterProvider()
+				SymbolWriterProvider = new PdbWriterProvider()
 			};
 			moduleDefinition.Write(AfterAssemblyPath, writerParameters);
 		}

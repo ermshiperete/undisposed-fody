@@ -1,0 +1,14 @@
+assembly-versioning-scheme: MajorMinor
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{env:GITVERSION_BUILD_NUMBER ?? 0}'
+mode: ContinuousDeployment
+branches:
+  master:
+    tag: beta
+    regex: (origin/)?master
+  pull-request:
+    mode: ContinuousDeployment
+    tag: PR
+  feature:
+    regex: feature[/-]
+    mode: ContinuousDeployment
+    tag: alpha

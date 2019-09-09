@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("UndisposedTests")]
+
 namespace Undisposed
 {
 	public static class DisposeTracker

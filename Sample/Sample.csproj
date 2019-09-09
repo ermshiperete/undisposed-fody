@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Sample</RootNamespace>
     <AssemblyName>Sample</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,23 +40,27 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <MySourceFiles Include="..\Undisposed\bin\Debug\net46\Undisposed.*" />
+    <MySourceFiles Include="..\Undisposed.Fody\bin\Debug\netstandard2.0\Undisposed.Fody.dll" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Undisposed\Undisposed.csproj">
+    <ProjectReference Include="..\Undisposed.Fody\Undisposed.Fody.csproj">
       <Project>{abb105a9-6629-43a7-9edc-5ef6c4f6be5a}</Project>
-      <Name>Undisposed</Name>
+      <Name>Undisposed.Fody</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- This is usually done in Weaver.props -->
+    <WeaverFiles Include="..\Tools\Undisposed.Fody.dll" />
   </ItemGroup>
   <Target Name="BeforeBuild">
     <MakeDir Directories="..\Tools" />
     <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\Tools" />
   </Target>
-  <Import Project="..\packages\Fody.3.0.3\build\Fody.targets" Condition="Exists('..\packages\Fody.3.0.3\build\Fody.targets')" />
+  <Import Project="..\packages\Fody.6.0.0\build\Fody.targets" Condition="Exists('..\packages\Fody.6.0.0\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Fody.3.0.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.0.3\build\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.6.0.0\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.0.0\build\Fody.targets'))" />
   </Target>
 </Project>

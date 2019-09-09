@@ -188,3 +188,5 @@ UpgradeLog*.htm
 FakesAssemblies/
 
 /Tools/
+/.vs/
+/nuget/

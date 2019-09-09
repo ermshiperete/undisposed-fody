@@ -23,7 +23,7 @@ namespace UndisposedTests
 			var assembly = Assembly.GetExecutingAssembly();
 			var directoryThisAssembly = Path.GetDirectoryName(assembly.Location);
 			_moduleWeaverTestHelper = new ModuleWeaverTestHelper(Path.Combine(directoryThisAssembly,
-				"../../../AssemblyToProcess/bin/Debug/AssemblyToProcess.dll"));
+				"../../../../AssemblyToProcess/bin/Debug/AssemblyToProcess.dll"));
 			_consoleOutput = new StringWriter();
 			Console.SetOut(_consoleOutput);
 			_originalLogWriter = DisposeTracker.LogWriter;
