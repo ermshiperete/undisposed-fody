@@ -77,16 +77,23 @@ tracked. Then Undisposed will not touch it.
 Installation
 ------------
 
-### From source
-Create a subdirectory `Tools` in the solution directory and copy
-`Undisposed.Fody.dll` there. Add the nuget package `Fody` to your
-project, add <Undisposed/> to the `FodyWeavers.xml` file, and add
-a reference to `Undisposed.Fody.dll`.
-
-When you build your project the dispose tracking calls get
-injected. The Sample project demonstrates the usage.
-
 ### From nuget package
 
 Simply install the `Undisposed.Fody` nuget package.
 
+### From source
+Create a subdirectory `Tools` in the solution directory and copy
+`Undisposed.Fody.dll` there. Add the nuget package `Fody` to your
+project, add <Undisposed/> to the `FodyWeavers.xml` file, add a
+`WeaverFiles` item group which includes `Undisposed.Fody.dll` like this:
+
+```
+  <ItemGroup>
+    <WeaverFiles Include="..\Tools\Undisposed.Fody.dll" />
+  </ItemGroup>
+```
+
+and add a reference to `Undisposed.Fody.dll`.
+
+When you build your project the dispose tracking calls get
+injected. The Sample project demonstrates the usage.
